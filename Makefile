@@ -12,7 +12,7 @@ OPENCL_LIB := $(XILINX_OPENCL)/runtime/lib/x86_64
 AOCL_COMPILE_CONFIG := $(shell aocl compile-config)
 AOCL_LINK_CONFIG := $(shell aocl link-config)
 
-CXXFLAGS := -g -Wall -Werror -std=c++11
+CXXFLAGS := -g -Wall -std=c++11
 CLXFLAGS := -g --xdevice $(DSA)
 CLAFLAGS := -g --board $(BSP)
 
@@ -28,11 +28,17 @@ xclbin: vector_add.xclbin
 .PHONY: altera
 altera: altera_add
 
+.PHONY: altera_debug
+altera_debug: CXXFLAGS += -DAOC_EMULATE -g
+altera_debug: CLAFLAGS += -DAOC_EMULATE -march=emulator -g
+altera_debug: altera_add aocx	
+	env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=$(BSP) gdb --args ./altera_add vector_add.aocx
+
 .PHONY: intel
 intel: intel_add
 
 altera_add: main.cpp
-	$(CXX) $(CFLAGS) $(AOCL_COMPILE_CONFIG) -o $@ main.cpp $(AOCL_LINK_CONFIG)
+	$(CXX) $(CXXFLAGS) $(AOCL_COMPILE_CONFIG) -o $@ main.cpp $(AOCL_LINK_CONFIG)
 
 vector_add.aocx: vector_add.cl
 	$(AOC) $(CLAFLAGS) $< -o $@
@@ -41,7 +47,7 @@ vector_add.aocx: vector_add.cl
 xilinx: xilinx_add
 
 xilinx_add: main.cpp
-	$(CXX) $(CXXFLAGS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@ main.cpp -lOpenCL -lxilinxopencl -llmx6.0
+	$(CXX) $(CXXFLAGS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@ main.cpp -lOpenCL #-lxilinxopencl -llmx6.0
 
 vector_add.xclbin: vector_add.cl
 	$(XOCC) $(CLXFLAGS) $< -o $@
