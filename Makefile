@@ -47,7 +47,7 @@ vector_add.aocx: vector_add.cl
 xilinx: xilinx_add
 
 xilinx_add: main.cpp
-	$(CXX) $(CXXFLAGS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@ main.cpp -lOpenCL #-lxilinxopencl -llmx6.0
+	$(CXX) $(CXXFLAGS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@ main.cpp -lOpenCL 
 
 vector_add.xclbin: vector_add.cl
 	$(XOCC) $(CLXFLAGS) $< -o $@
@@ -56,4 +56,4 @@ intel_add: main.cpp
 	$(CXX) $(CXXFLAGS) -DINTEL_CL -I/opt/intel/opencl/include -L/opt/intel/opencl/lib64 -o $@ main.cpp -lOpenCL 
 
 clean:
-	rm -rf altera_add xilinx_add intel_add
+	rm -rf altera_add xilinx_add intel_add vector_add

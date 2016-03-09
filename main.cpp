@@ -102,12 +102,6 @@ int main(int argc, char *argv[])
     printf("OpenCL platform: %s\nOpenCL name: %s\n", cl_platform_vendor,
         cl_platform_name);
   }
-/* TODO
- * Change device flag
- *
- * e.g. CL_DEVICE_TYPE_CPU
- *
- */
 #ifdef INTEL_CL
   const int device_flag = CL_DEVICE_TYPE_CPU;
 #else  
@@ -142,13 +136,6 @@ int main(int argc, char *argv[])
     printf("ERROR: Failed to load binary\n");
     return -1;
   }
-
-/* TODO
- * Change to clCreateProgramWithSource 
- *
- * see www.khronos.org/registry/cl/sdk/1.0/docs/man/xhtml/clCreateProgramWithSource.html
- *
- */
 
 #ifdef INTEL_CL
 
