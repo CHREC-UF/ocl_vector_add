@@ -41,15 +41,15 @@ int main(int argc, char *argv[])
   size_t global;
   size_t local;
 
-  cl_platform_id platform;
+  cl_platform_id platform[10];
   cl_device_id device;
   cl_context context;
   cl_command_queue queue;
   cl_program program;
   cl_kernel kernel;
 
-  char cl_platform_vendor[1001];
-  char cl_platform_name[1001];
+  char cl_platform_vendor[10][1001];
+  char cl_platform_name[10][1001];
 
   cl_mem input_a;
   cl_mem input_b;
@@ -78,36 +78,40 @@ int main(int argc, char *argv[])
 
   printf("Found %i OpenCL platforms\n", num_platforms);
 
+  err = clGetPlatformIDs(10, platform, NULL);
+  if (err != CL_SUCCESS)
+  {
+    printf("ERROR: Failed to find OpenCL platform\n");
+    return -1;
+  }
+
   for(unsigned i=0; i<num_platforms; i++)
   {
+    err = clGetPlatformInfo(platform[i], CL_PLATFORM_VENDOR, 1000, 
+        (void*) cl_platform_vendor[i], NULL);
 
-    err = clGetPlatformIDs(1, &platform, NULL);
-    if (err != CL_SUCCESS)
-    {
-      printf("ERROR: Failed to find OpenCL platform\n");
-      return -1;
-    }
-
-    err = clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, 1000, 
-        (void*) cl_platform_vendor, NULL);
-
-    err |= clGetPlatformInfo(platform, CL_PLATFORM_NAME, 1000,
-        (void *) cl_platform_name, NULL);
+    err |= clGetPlatformInfo(platform[i], CL_PLATFORM_NAME, 1000,
+        (void *) cl_platform_name[i], NULL);
     if (err != CL_SUCCESS)
     {
       printf("ERROR: Failed to get OpenCL platform info\n");
       return -1;
     }
 
-    printf("OpenCL platform: %s\nOpenCL name: %s\n", cl_platform_vendor,
-        cl_platform_name);
+    printf("OpenCL platform %i: %s\nOpenCL name: %s\n", i, cl_platform_vendor[i],
+        cl_platform_name[i]);
   }
-#ifdef INTEL_CL
-  const int device_flag = CL_DEVICE_TYPE_CPU;
-#else  
-  const int device_flag = CL_DEVICE_TYPE_ACCELERATOR;
-#endif
-  err = clGetDeviceIDs(platform, device_flag, 1, &device, NULL);
+
+  printf("Choose OpenCL platform \n");
+  int number = 0;
+
+  scanf("%d", &number);
+
+  printf("Using OpenCL platform: %s\n", cl_platform_name[number]);
+
+  const int device_flag = CL_DEVICE_TYPE_DEFAULT;
+
+  err = clGetDeviceIDs(platform[number], device_flag, 1, &device, NULL);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed finding OpenCL device\n");
@@ -137,17 +141,19 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-#ifdef INTEL_CL
+  char *intel_platform = "Intel(R) Corporation";
 
-  program = clCreateProgramWithSource(context, 1, 
-      (const char **) &binary, &binary_size, &err);
-
-#else
-  cl_int status;
-  program = clCreateProgramWithBinary(context, 1, &device, &binary_size,
-      (const unsigned char **) &binary, &status, &err);
-
-#endif  
+  int is_intel = strcmp(cl_platform_vendor[number], intel_platform);
+ 
+  if(is_intel == 0)
+  {
+    program = clCreateProgramWithSource(context, 1, 
+        (const char **) &binary, &binary_size, &err);
+  } else{
+    cl_int status;
+    program = clCreateProgramWithBinary(context, 1, &device, &binary_size,
+        (const unsigned char **) &binary, &status, &err);
+  }
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to create OpenCL program\n");
