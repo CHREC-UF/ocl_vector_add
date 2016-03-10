@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -55,12 +56,6 @@ int main(int argc, char *argv[])
   cl_mem input_b;
   cl_mem output_c;
 
-  if (argc != 2)
-  {
-    printf("%s <inputfile>\n", argv[0]);
-    return -1;
-  }
-
   for(int i=0; i<DATA_SIZE; i++)
   {
     a[i] = i;
@@ -76,7 +71,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  printf("Found %i OpenCL platforms\n", num_platforms);
+  printf("Found %i OpenCL platforms\n\n\n\n", num_platforms);
 
   err = clGetPlatformIDs(10, platform, NULL);
   if (err != CL_SUCCESS)
@@ -98,16 +93,31 @@ int main(int argc, char *argv[])
       return -1;
     }
 
-    printf("OpenCL platform %i: %s\nOpenCL name: %s\n", i, cl_platform_vendor[i],
+    printf("    OpenCL platform %i: %s OpenCL name: %s\n", i, cl_platform_vendor[i],
         cl_platform_name[i]);
   }
 
-  printf("Choose OpenCL platform \n");
+  printf("\n\nChoose OpenCL platform: ");
   int number = 0;
 
   scanf("%d", &number);
 
-  printf("Using OpenCL platform: %s\n", cl_platform_name[number]);
+  printf("    Using OpenCL platform: %s\n\n", cl_platform_name[number]);
+  
+  int exist = 1;
+  char input_file[1000];
+
+  while(exist)
+  {
+
+    printf("Enter OpenCL source/binary: ");
+
+    scanf("%s", input_file);
+
+    exist = access(input_file, F_OK);
+
+  }
+
 
   const int device_flag = CL_DEVICE_TYPE_DEFAULT;
 
@@ -133,7 +143,7 @@ int main(int argc, char *argv[])
   }
 
   unsigned char *binary;
-  char *bitfile = argv[1];
+  char *bitfile = input_file;
   size_t binary_size = load_file_to_memory(bitfile, (char **) &binary);
   if(binary_size < 0)
   {
