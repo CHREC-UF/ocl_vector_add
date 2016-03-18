@@ -1,50 +1,57 @@
-XILINX_OPENCL := $(XILINX_SDACCEL)
-DSA := xilinx:adm-pcie-7v3:1ddr:2.1
+XDEVICE := xilinx:adm-pcie-7v3:1ddr:2.1
 XOCC := $(XILINX_SDACCEL)/bin/xocc
 ALTERA_OPENCL := $(ALTERAOCLSDKROOT)
 BSP := p385_hpc_d5
 AOC := $(ALTERA_OPENCL)/bin/aoc
-CPP := g++
+CC := g++
 
-#OPENCL_INC := $(XILINX_OPENCL)/runtime/include/1_2
-#OPENCL_LIB := $(XILINX_OPENCL)/runtime/lib/x86_64
-
-#AOCL_COMPILE_CONFIG := $(shell aocl compile-config)
+AOCL_COMPILE_CONFIG := $(shell aocl compile-config)
 AOCL_LINK_CONFIG := $(shell aocl link-config)
 
-AOCL_COMPILE_CONFIG := -I$(ALTERAOCLSDKROOT)/host/include
-#AOCL_LINK_CONFIG := -L$(ALTERAOCLSDKROOT)/host/linux64/lib
+CFLAGS := -g -Wall -std=c++11
+LFLAGS += -lOpenCL $(AOCL_LINK_CONFIG)
 
-CXXFLAGS := -g -Wall -std=c++11
-CLXFLAGS := -g --xdevice $(DSA)
-CLAFLAGS := -g --board $(BSP)
+SRCS = main.cpp
+
+OBJS := $(SRCS:.cpp=.o)
+
+TARGET = host_vector_add
 
 .PHONY: all
-all: vector_add
-
-.PHONY: aocx
-aocx: vector_add.aocx
-
-.PHONY: xclbin
-xclbin: vector_add.xclbin
+all: $(TARGET)
 
 .PHONY: altera
-altera: altera_add
+altera : CFLAGS += -DALTERA_CL
+altera : CLFLAGS += -DALTERA_CL
+altera : $(TARGET) $(CL_SRCS:.cl=.aocx)
+
+.PHONY: xilinx
+xilinx : CFLAGS += -DXILINX_CL
+xilinx : CLFLAGS += -DXILINX_CL
+xilinx : $(TARGET) $(CL_SRCS:.cl=.xclbin)
 
 .PHONY: altera_debug
-altera_debug: CXXFLAGS += -DAOC_EMULATE -g
-altera_debug: CLAFLAGS += -DAOC_EMULATE -march=emulator -g
-altera_debug: altera_add aocx	
-	env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=$(BSP) gdb --args ./altera_add vector_add.aocx
+altera_debug : CFLAGS += -DALTERA_CL -DCL_EMULATE
+altera_debug : CLFLAGS += -DALTERA_CL -DCL_EMULATE -march=emulator -g
+altera_debug : $(TARGET) $(CL_SRCS:.cl=.aocx)
 
-vector_add: main.cpp
-	$(CXX) $(CXXFLAGS) $(AOCL_COMPILE_CONFIG) -o $@ main.cpp -lOpenCL $(AOCL_LINK_CONFIG) 
+.PHONY: xilinx_debug
+xilinx_debug : CFLAGS += -DXILINX_CL -DCL_EMULATE
+xilinx_debug : CLFLAGS += -DXILINX_CL -DCL_EMULATE -t sw_emu
+xilinx_debug : $(TARGET) $(CL_SRCS:.cl=.xclbin)))
 
-vector_add.aocx: vector_add.cl
-	$(AOC) $(CLAFLAGS) $< -o $@
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) $(LFLAGS) -o $@ 
 
-vector_add.xclbin: vector_add.cl
-	$(XOCC) $(CLXFLAGS) $< -o $@
+%.o : %.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.aocx : %.cl
+	$(AOC) --board $(AOCL_BOARD) $(CLFLAGS) $< -o $@ 
+
+%.xclbin : %.cl
+	$(XOCC) --xdevice $(XDEVICE) $(CLFLAGS) $< -o $@
 
 clean:
-	rm -rf vector_add
+	rm -rf $(TARGET) $(OBJS)
+

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <string.h>
+#include <string>
 #include <sys/types.h>
 #include <CL/opencl.h>
 
@@ -103,19 +103,26 @@ int main(int argc, char *argv[])
   scanf("%d", &number);
 
   printf("    Using OpenCL platform: %s\n\n", cl_platform_name[number]);
-  
-  int exist = 1;
-  char input_file[1000];
+ 
+  std::string myPlatform(cl_platform_name[number]);
+  std::string input_file("vector_add");
 
-  while(exist)
+  if (myPlatform.compare("Xilinx") == 0)
   {
+    input_file.append(".xclbin");
+  } else if (myPlatform.compare("Intel(R) OpenCL") == 0)
+  {
+    input_file.append(".cl");
+  } else if (myPlatform.compare("Altera SDK for OpenCL") == 0)
+  {
+    input_file.append(".aocx");
+  }
 
-    printf("Enter OpenCL source/binary: ");
 
-    scanf("%s", input_file);
-
-    exist = access(input_file, F_OK);
-
+  if (access(input_file.c_str(), F_OK) != 0)
+  {
+    printf("ERROR: OpenCL file %s does not exist\n", input_file.c_str());
+    return -1;
   }
 
 
@@ -143,7 +150,7 @@ int main(int argc, char *argv[])
   }
 
   unsigned char *binary;
-  char *bitfile = input_file;
+  const char *bitfile = input_file.c_str();
   size_t binary_size = load_file_to_memory(bitfile, (char **) &binary);
   if(binary_size < 0)
   {
@@ -151,11 +158,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  char *intel_platform = "Intel(R) Corporation";
-
-  int is_intel = strcmp(cl_platform_vendor[number], intel_platform);
- 
-  if(is_intel == 0)
+  if(myPlatform.compare("Intel(R) OpenCL") == 0)
   {
     program = clCreateProgramWithSource(context, 1, 
         (const char **) &binary, &binary_size, &err);
@@ -174,6 +177,7 @@ int main(int argc, char *argv[])
     printf("ERROR: Failed to build OpenCL program\n");
     return -1;
   } 
+
 
   kernel = clCreateKernel(program, "vector_add", &err);
   if (err != CL_SUCCESS)
