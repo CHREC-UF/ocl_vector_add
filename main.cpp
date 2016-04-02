@@ -52,6 +52,8 @@ int main(int argc, char *argv[])
   char cl_platform_vendor[10][1001];
   char cl_platform_name[10][1001];
 
+  char cl_device_name[1001];
+
   cl_mem input_a;
   cl_mem input_b;
   cl_mem output_c;
@@ -134,6 +136,15 @@ int main(int argc, char *argv[])
     printf("ERROR: Failed finding OpenCL device\n");
     return -1;
   }
+
+  err = clGetDeviceInfo(device, CL_DEVICE_NAME, 1000, cl_device_name, NULL);
+  if (err != CL_SUCCESS)
+  {
+    printf("ERROR: Failed getting device name\n");
+    return -1;
+  }
+
+  printf("\nUsing OpenCL device: %s\n", cl_device_name);
 
   context = clCreateContext(0, 1, &device, NULL, NULL, &err);
   if (err != CL_SUCCESS)
