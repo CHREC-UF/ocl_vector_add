@@ -109,17 +109,22 @@ int main(int argc, char *argv[])
   std::string myPlatform(cl_platform_name[number]);
   std::string input_file("vector_add");
 
-  if (myPlatform.compare("Xilinx") == 0)
+  if (argc == 2)
   {
-    input_file.append(".xclbin");
-  } else if (myPlatform.compare("Intel(R) OpenCL") == 0)
+    input_file.assign(argv[1]);
+  } else
   {
-    input_file.append(".cl");
-  } else if (myPlatform.compare("Altera SDK for OpenCL") == 0)
-  {
-    input_file.append(".aocx");
-  }
-
+    if (myPlatform.compare("Xilinx") == 0)
+    {
+      input_file.append(".xclbin");
+    } else if (myPlatform.compare("Intel(R) OpenCL") == 0)
+    {
+      input_file.append(".cl");
+    } else if (myPlatform.compare("Altera SDK for OpenCL") == 0)
+    {
+      input_file.append(".aocx");
+    }
+  }    
 
   if (access(input_file.c_str(), F_OK) != 0)
   {
