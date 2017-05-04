@@ -1,0 +1,8 @@
+sdaccel_*
+*.aocx
+*.xclbin
+*.o
+*.aoco
+host_vector_add
+vector_add/
+vector_add_sim/

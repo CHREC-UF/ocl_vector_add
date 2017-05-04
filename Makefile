@@ -68,5 +68,5 @@ $(TARGET): $(OBJS)
 	$(XOCC) --xdevice $(XDEVICE) $(CLFLAGS) $< -o $@
 
 clean:
-	rm -rf $(TARGET) $(OBJS) $(SIM_CLTARGET).*
+	@rm -rf $(TARGET) $(OBJS) $(SIM_CLTARGET) $(SIM_CLTARGET)* *.aoco sdaccel_* 
 
