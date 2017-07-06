@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
   size_t global;
   size_t local;
 
+  printf("Hello world\n");
+
   cl_platform_id platform[10];
   cl_device_id device;
   cl_context context;
