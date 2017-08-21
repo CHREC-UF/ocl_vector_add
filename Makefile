@@ -6,7 +6,7 @@ AOCL_BOARD := p385_hpc_d5
 AOC := $(ALTERA_OPENCL)/bin/aoc
 CC := g++
 
-CFLAGS := -g -Wall -std=c++11
+CFLAGS := -g -Wall 
 LFLAGS += -lOpenCL -L$(ALTERA_OPENCL)/host/linux64/lib -lelf -lpthread
 
 SRCS = main.cpp
