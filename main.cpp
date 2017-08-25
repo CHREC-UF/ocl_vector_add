@@ -43,20 +43,20 @@ int main(int argc, char *argv[])
   size_t local;
 
   cl_platform_id platform[10];
-  cl_device_id device;
-  cl_context context;
-  cl_command_queue queue;
-  cl_program program;
-  cl_kernel kernel;
+  cl_device_id device[4];
+  cl_context context[4];
+  cl_command_queue queue[4];
+  cl_program program[4];
+  cl_kernel kernel[4];
 
   char cl_platform_vendor[10][1001];
   char cl_platform_name[10][1001];
 
   char cl_device_name[1001];
 
-  cl_mem input_a;
-  cl_mem input_b;
-  cl_mem output_c;
+  cl_mem input_a[4];
+  cl_mem input_b[4];
+  cl_mem output_c[4];
 
   for(int i=0; i<DATA_SIZE; i++)
   {
@@ -135,14 +135,26 @@ int main(int argc, char *argv[])
 
   const int device_flag = CL_DEVICE_TYPE_DEFAULT;
 
-  err = clGetDeviceIDs(platform[number], device_flag, 1, &device, NULL);
+  cl_uint num_devices;
+
+  err = clGetDeviceIDs(platform[number], device_flag, 0, NULL, &num_devices);
+  if (err != CL_SUCCESS)
+  {
+    printf("ERROR: Failed finding OpenCL devices\n");
+    return -1;
+  }
+
+  if (num_devices > 4) num_devices = 4;
+  printf("Found %d OpenCL devices\n", num_devices);
+
+  err = clGetDeviceIDs(platform[number], device_flag, 4, device, NULL);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed finding OpenCL device\n");
     return -1;
   }
 
-  err = clGetDeviceInfo(device, CL_DEVICE_NAME, 1000, cl_device_name, NULL);
+  err = clGetDeviceInfo(device[0], CL_DEVICE_NAME, 1000, cl_device_name, NULL);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed getting device name\n");
@@ -151,14 +163,19 @@ int main(int argc, char *argv[])
 
   printf("\nUsing OpenCL device: %s\n", cl_device_name);
 
-  context = clCreateContext(0, 1, &device, NULL, NULL, &err);
+bool pass = true;
+int i = 0;
+for (i=0; i<num_devices; i++)
+{
+
+  context[i] = clCreateContext(0, 1, &device[i], NULL, NULL, &err);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed creating context\n");
     return -1;
   }
 
-  queue = clCreateCommandQueue(context, device, 0, &err);
+  queue[i] = clCreateCommandQueue(context[i], device[i], 0, &err);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to create command queue\n");
@@ -176,18 +193,18 @@ int main(int argc, char *argv[])
 
   if(myPlatform.compare("Intel(R) OpenCL") == 0)
   {
-    program = clCreateProgramWithSource(context, 1, 
+    program[i] = clCreateProgramWithSource(context[i], 1, 
         (const char **) &binary, &binary_size, &err);
   } else{
     cl_int status;
-    program = clCreateProgramWithBinary(context, 1, &device, &binary_size,
+    program[i] = clCreateProgramWithBinary(context[i], 1, &device[i], &binary_size,
         (const unsigned char **) &binary, &status, &err);
   }
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to create OpenCL program\n");
   }
-  err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+  err = clBuildProgram(program[i], 0, NULL, NULL, NULL, NULL);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to build OpenCL program\n");
@@ -195,28 +212,28 @@ int main(int argc, char *argv[])
   } 
 
 
-  kernel = clCreateKernel(program, "vector_add", &err);
+  kernel[i] = clCreateKernel(program[i], "vector_add", &err);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to create OpenCL kernel\n");
     return -1;
   }
 
-  input_a = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * DATA_SIZE,
+  input_a[i] = clCreateBuffer(context[i], CL_MEM_READ_ONLY, sizeof(int) * DATA_SIZE,
       NULL, NULL);
-  input_b = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * DATA_SIZE,
+  input_b[i] = clCreateBuffer(context[i], CL_MEM_READ_ONLY, sizeof(int) * DATA_SIZE,
       NULL, NULL);
-  output_c = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) 
+  output_c[i] = clCreateBuffer(context[i], CL_MEM_WRITE_ONLY, sizeof(int) 
       * DATA_SIZE, NULL, NULL);
-  if(!input_a || !input_b || !output_c)
+  if(!input_a[i] || !input_b[i] || !output_c[i])
   {
     printf("ERROR: Failed to allocate OpenCL buffers\n");
     return -1;
   }
 
-  err = clEnqueueWriteBuffer(queue, input_a, CL_TRUE, 0, sizeof(int)
+  err = clEnqueueWriteBuffer(queue[i], input_a[i], CL_TRUE, 0, sizeof(int)
       * DATA_SIZE, a, 0, NULL, NULL);
-  err |= clEnqueueWriteBuffer(queue, input_b, CL_TRUE, 0, sizeof(int)
+  err |= clEnqueueWriteBuffer(queue[i], input_b[i], CL_TRUE, 0, sizeof(int)
       * DATA_SIZE, b, 0, NULL, NULL);
   if (err != CL_SUCCESS)
   {
@@ -224,9 +241,9 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_a);
-  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &input_b);
-  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_c);
+  err  = clSetKernelArg(kernel[i], 0, sizeof(cl_mem), &input_a[i]);
+  err |= clSetKernelArg(kernel[i], 1, sizeof(cl_mem), &input_b[i]);
+  err |= clSetKernelArg(kernel[i], 2, sizeof(cl_mem), &output_c[i]);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Failed to set OpenCL kernel arguments\n");
@@ -236,7 +253,7 @@ int main(int argc, char *argv[])
   global = DATA_SIZE;
   local = 16;
 
-  err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global, &local, 0, 
+  err = clEnqueueNDRangeKernel(queue[i], kernel[i], 1, NULL, &global, &local, 0, 
       NULL, NULL);
   if (err != CL_SUCCESS)
   {
@@ -244,14 +261,14 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  err = clFinish(queue);
+  err = clFinish(queue[i]);
   if (err != CL_SUCCESS)
   {
     printf("ERROR: Command queue failed to complete\n");
     return -1;
   }
 
-  err = clEnqueueReadBuffer(queue, output_c, CL_TRUE, 0, sizeof(int) 
+  err = clEnqueueReadBuffer(queue[i], output_c[i], CL_TRUE, 0, sizeof(int) 
       * DATA_SIZE, c, 0, NULL, NULL);
   if (err != CL_SUCCESS)
   {
@@ -259,7 +276,6 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  bool pass = true;
 
   for(int i=0; i<DATA_SIZE; i++)
   {
@@ -269,16 +285,19 @@ int main(int argc, char *argv[])
       break;
     }
   }
-
+}
   printf("OpenCL test %s\n",pass?"PASS":"FAIL");
 
-  clReleaseMemObject(input_a);
-  clReleaseMemObject(input_b);
-  clReleaseMemObject(output_c);
-  clReleaseKernel(kernel);
-  clReleaseProgram(program);
-  clReleaseCommandQueue(queue);
-  clReleaseContext(context);
+for (i=0; i<num_devices; i++)
+{
+  clReleaseMemObject(input_a[i]);
+  clReleaseMemObject(input_b[i]);
+  clReleaseMemObject(output_c[i]);
+  clReleaseKernel(kernel[i]);
+  clReleaseProgram(program[i]);
+  clReleaseCommandQueue(queue[i]);
+  clReleaseContext(context[i]);
+}
 
   return 0;
 

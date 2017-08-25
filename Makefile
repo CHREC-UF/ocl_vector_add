@@ -9,7 +9,7 @@ CC := g++
 AOCL_COMPILE_CONFIG := $(shell aocl compile-config)
 AOCL_LINK_CONFIG := $(shell aocl link-config)
 
-CFLAGS := -g -Wall -std=c++11
+CFLAGS := -g -Wall 
 LFLAGS += -lOpenCL $(AOCL_LINK_CONFIG)
 
 SRCS = main.cpp
