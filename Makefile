@@ -6,11 +6,8 @@ AOCL_BOARD := p385_hpc_d5
 AOC := $(ALTERA_OPENCL)/bin/aoc
 CC := g++
 
-AOCL_COMPILE_CONFIG := $(shell aocl compile-config)
-AOCL_LINK_CONFIG := $(shell aocl link-config)
-
 CFLAGS := -g -Wall 
-LFLAGS += -lOpenCL $(AOCL_LINK_CONFIG)
+LFLAGS += -lOpenCL -L$(ALTERA_OPENCL)/host/linux64/lib -lelf -lpthread
 
 SRCS = main.cpp
 CL_SRCS = vector_add.cl
