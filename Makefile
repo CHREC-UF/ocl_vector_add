@@ -1,13 +1,13 @@
 XDEVICE := xilinx:adm-pcie-7v3:1ddr:3.0
 XOCC := $(XILINX_SDACCEL)/bin/xocc
 ALTERA_OPENCL := $(ALTERAOCLSDKROOT)
-BSP := p385_hpc_d5
-AOCL_BOARD := p385_hpc_d5
+BSP := p385a_sch_ax115 
+AOCL_BOARD := p385a_sch_ax115
 AOC := $(ALTERA_OPENCL)/bin/aoc
 CC := g++
 
-CFLAGS := -g -Wall 
-LFLAGS += -lOpenCL -L$(ALTERA_OPENCL)/host/linux64/lib -lelf -lpthread
+CFLAGS := -g -Wall  
+LFLAGS += -lOpenCL -lpthread 
 
 SRCS = main.cpp
 CL_SRCS = vector_add.cl
@@ -22,7 +22,7 @@ all: $(TARGET)
 
 .PHONY: altera
 altera : CFLAGS += -DALTERA_CL
-altera : CLFLAGS += -DALTERA_CL
+altera : CLFLAGS += -v 
 altera : $(TARGET) $(CL_SRCS:.cl=.aocx)
 
 .PHONY: xilinx
